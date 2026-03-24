@@ -84,6 +84,10 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     const previewJsUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaUri, "preview.js"));
     const cspSource = webview.cspSource;
 
+    const config = vscode.workspace.getConfiguration("mdv");
+    const fontSize = config.get<number>("fontSize", 16);
+    const fontFamily = config.get<string>("fontFamily", "Cascadia, Consolas, monospace");
+
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,6 +101,11 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="${katexCssUri}">
   <link rel="stylesheet" href="${previewCssUri}">
+  <style>
+    html, body { font-family: ${fontFamily}; }
+    .prose { font-size: ${fontSize}px; }
+    .prose pre code, .shiki code { font-family: ${fontFamily}; }
+  </style>
 </head>
 <body>
   <article class="prose">

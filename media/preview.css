@@ -1,17 +1,28 @@
-/* Base typography */
+/* Force light mode - override VSCode's injected dark theme styles */
 html, body {
   font-family: Cascadia, Consolas, monospace;
   margin: 0;
   padding: 0;
-  background: #ffffff;
-  color: #1f2937;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+body.vscode-dark, body.vscode-high-contrast {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+/* Override VSCode's default preformatted text styles */
+code {
+  background-color: transparent;
+  color: inherit;
 }
 
 /* Prose container - replicates Tailwind Typography .prose */
 .prose {
   font-size: 16px;
   line-height: 1.75;
-  max-width: 65ch;
+  max-width: 85%;
   margin: 0 auto;
   padding: 2rem 1rem;
   color: #374151;
@@ -43,6 +54,7 @@ html, body {
 .prose blockquote {
   font-style: italic;
   color: #4b5563;
+  background-color: transparent;
   border-left: 0.25rem solid #e5e7eb;
   padding-left: 1em;
   margin-top: 1.6em;
@@ -53,7 +65,13 @@ html, body {
 .prose hr { border-color: #e5e7eb; margin-top: 3em; margin-bottom: 3em; }
 
 /* Images */
-.prose img { margin-top: 2em; margin-bottom: 2em; max-width: 100%; height: auto; }
+.prose img { max-width: 100%; height: auto; }
+
+/* Image interactive container reuses mermaid zoom styles */
+.image-interactive { margin-top: 2em; margin-bottom: 2em; }
+.image-interactive .mermaid-viewport { min-height: auto; }
+.image-container { transform-origin: 0 0; display: flex; justify-content: center; padding: 0.5rem; }
+.image-container img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 
 /* Tables */
 .prose table { width: 100%; table-layout: auto; text-align: left; margin-top: 2em; margin-bottom: 2em; font-size: 0.875em; line-height: 1.7142857; border-collapse: collapse; }
@@ -81,12 +99,18 @@ html, body {
   font-family: Cascadia, Consolas, monospace;
 }
 
+/* Force Shiki token backgrounds to transparent (prevents dark backgrounds on individual tokens) */
+.shiki span {
+  background-color: transparent !important;
+}
+
 /* Inline code - yellow marker */
 .prose p code,
 .prose li code,
 .prose td code,
 .prose blockquote code {
   background-color: #fffb91;
+  color: #1f2937;
   padding: 0.125rem 0.25rem;
   border-radius: 0.1875rem;
   font-size: 0.875em;
@@ -208,21 +232,76 @@ html, body {
   border-bottom-style: solid;
 }
 
-/* Mermaid diagram */
-.mermaid-container {
-  display: flex;
-  justify-content: center;
+/* Mermaid diagram - interactive wrapper */
+.mermaid-interactive {
+  position: relative;
   margin: 1rem 0;
-  padding: 1rem;
-  background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  overflow-x: auto;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.mermaid-viewport {
+  overflow: hidden;
+  min-height: 300px;
+  cursor: grab;
+}
+
+.mermaid-viewport:active { cursor: grabbing; }
+
+.mermaid-container {
+  transform-origin: 0 0;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
 }
 
 .mermaid-container svg {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+}
+
+/* Mermaid zoom controls */
+.mermaid-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  z-index: 10;
+}
+
+.mermaid-zoom-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.mermaid-zoom-btn:hover { background: #e5e7eb; }
+
+.mermaid-zoom-level {
+  font-size: 0.75rem;
+  color: #6b7280;
+  background: rgba(255, 255, 255, 0.9);
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: 0.25rem;
+  min-width: 3rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Mermaid error */

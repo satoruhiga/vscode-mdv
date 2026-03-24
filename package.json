@@ -29,7 +29,22 @@
         "key": "ctrl+shift+v",
         "when": "activeCustomEditorId == 'mdv.preview' || resourceExtname == '.md'"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "mdv",
+      "properties": {
+        "mdv.fontSize": {
+          "type": "number",
+          "default": 16,
+          "description": "Base font size in pixels for the preview"
+        },
+        "mdv.fontFamily": {
+          "type": "string",
+          "default": "Cascadia, Consolas, monospace",
+          "description": "Font family for the preview"
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.mjs",

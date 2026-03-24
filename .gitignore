@@ -1,3 +1,4 @@
 node_modules/
 out/
-media/
+media/katex/
+media/mermaid.min.js

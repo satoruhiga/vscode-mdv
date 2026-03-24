@@ -1,0 +1,275 @@
+/* Base typography */
+html, body {
+  font-family: Cascadia, Consolas, monospace;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+/* Prose container - replicates Tailwind Typography .prose */
+.prose {
+  font-size: 16px;
+  line-height: 1.75;
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  color: #374151;
+}
+
+/* Headings */
+.prose h1 { font-size: 2.25em; margin-top: 0; margin-bottom: 0.8888889em; line-height: 1.1111111; font-weight: 800; color: #111827; }
+.prose h2 { font-size: 1.5em; margin-top: 2em; margin-bottom: 1em; line-height: 1.3333333; font-weight: 700; color: #111827; }
+.prose h3 { font-size: 1.25em; margin-top: 1.6em; margin-bottom: 0.6em; line-height: 1.6; font-weight: 600; color: #111827; }
+.prose h4 { margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.5; font-weight: 600; color: #111827; }
+
+/* Paragraphs */
+.prose p { margin-top: 1.25em; margin-bottom: 1.25em; }
+
+/* Links */
+.prose a { color: #2563eb; text-decoration: underline; font-weight: 500; }
+.prose a:hover { color: #1d4ed8; }
+
+/* Bold / Italic */
+.prose strong { font-weight: 600; color: #111827; }
+
+/* Lists */
+.prose ul { list-style-type: disc; margin-top: 1.25em; margin-bottom: 1.25em; padding-left: 1.625em; }
+.prose ol { list-style-type: decimal; margin-top: 1.25em; margin-bottom: 1.25em; padding-left: 1.625em; }
+.prose li { margin-top: 0.5em; margin-bottom: 0.5em; }
+.prose li > ul, .prose li > ol { margin-top: 0.5em; margin-bottom: 0.5em; }
+
+/* Blockquotes */
+.prose blockquote {
+  font-style: italic;
+  color: #4b5563;
+  border-left: 0.25rem solid #e5e7eb;
+  padding-left: 1em;
+  margin-top: 1.6em;
+  margin-bottom: 1.6em;
+}
+
+/* Horizontal rules */
+.prose hr { border-color: #e5e7eb; margin-top: 3em; margin-bottom: 3em; }
+
+/* Images */
+.prose img { margin-top: 2em; margin-bottom: 2em; max-width: 100%; height: auto; }
+
+/* Tables */
+.prose table { width: 100%; table-layout: auto; text-align: left; margin-top: 2em; margin-bottom: 2em; font-size: 0.875em; line-height: 1.7142857; border-collapse: collapse; }
+.prose thead { border-bottom: 2px solid #d1d5db; }
+.prose thead th { padding: 0 0.5714286em 0.5714286em; font-weight: 600; vertical-align: bottom; color: #111827; }
+.prose tbody tr { border-bottom: 1px solid #e5e7eb; }
+.prose tbody td { padding: 0.5714286em; vertical-align: top; }
+
+/* Code blocks */
+.prose pre,
+.shiki {
+  background-color: #f8fafc !important;
+  border-radius: 0.1875rem;
+  padding: 0.75rem;
+  overflow-x: auto;
+  color: #1f2937;
+  font-size: 1em;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.prose pre code,
+.shiki code {
+  font-size: 1em;
+  font-family: Cascadia, Consolas, monospace;
+}
+
+/* Inline code - yellow marker */
+.prose p code,
+.prose li code,
+.prose td code,
+.prose blockquote code {
+  background-color: #fffb91;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.1875rem;
+  font-size: 0.875em;
+  font-weight: normal;
+}
+
+/* GFM Checkboxes */
+.prose input[type="checkbox"] {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #6b7280;
+  border-radius: 0.25rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  cursor: default;
+  position: relative;
+}
+
+.prose input[type="checkbox"]:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.prose input[type="checkbox"]:checked::after {
+  content: "\2713";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Frontmatter table */
+.frontmatter-table {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #f8fafc;
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.frontmatter-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  background-color: #f1f5f9;
+  border-bottom: 1px solid #e5e7eb;
+  width: 30%;
+  vertical-align: top;
+}
+
+.frontmatter-table td {
+  padding: 0.5rem 0.75rem;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+  word-break: break-word;
+}
+
+.frontmatter-table tr:last-child th,
+.frontmatter-table tr:last-child td {
+  border-bottom: none;
+}
+
+.frontmatter-null {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.frontmatter-json {
+  font-size: 0.75rem;
+  background-color: #e2e8f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: block;
+  white-space: pre-wrap;
+}
+
+/* Frontmatter error */
+.frontmatter-error {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  background-color: #fef2f2;
+}
+
+.frontmatter-error-title {
+  color: #dc2626;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.frontmatter-error-content {
+  font-size: 0.875rem;
+  background-color: #fee2e2;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* Wiki link styling */
+.wiki-link {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+  transition: border-bottom-style 0.15s ease;
+}
+
+.wiki-link:hover {
+  border-bottom-style: solid;
+}
+
+/* Mermaid diagram */
+.mermaid-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mermaid error */
+.mermaid-error {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  background-color: #fef2f2;
+}
+
+.mermaid-error-message {
+  color: #dc2626;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.mermaid-error-code {
+  font-size: 0.875rem;
+  background-color: #fee2e2;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+}
+
+/* Error banner (for markdown parse failures) */
+.error-banner {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* Definition lists */
+.prose dl { margin-top: 1.25em; margin-bottom: 1.25em; }
+.prose dt { font-weight: 600; margin-top: 1em; color: #111827; }
+.prose dd { margin-left: 1.625em; margin-top: 0.25em; }
+
+/* Footnotes */
+.prose .footnotes { font-size: 0.875em; border-top: 1px solid #e5e7eb; margin-top: 2em; padding-top: 1em; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #e5e7eb; }
+::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+* { scrollbar-width: thin; scrollbar-color: #9ca3af #e5e7eb; }

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import { processMarkdown } from "./markdown/processor";
+import { AnnotationStore } from "./annotations";
 
 export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = "mdv.preview";
@@ -9,8 +10,12 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   private readonly fileWatchers = new Map<string, fs.FSWatcher>();
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly visibleLines = new Map<string, number>();
+  private readonly pendingSelectionResolves = new Map<string, (sel: any) => void>();
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly annotationStore: AnnotationStore
+  ) {}
 
   async openCustomDocument(
     uri: vscode.Uri,
@@ -39,6 +44,13 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     webviewPanel.webview.onDidReceiveMessage((msg) => {
       if (msg.type === "visibleLine" && typeof msg.line === "number") {
         this.visibleLines.set(uri.toString(), msg.line);
+      }
+      if (msg.type === "selectionResult") {
+        const resolve = this.pendingSelectionResolves.get(uri.toString());
+        if (resolve) {
+          this.pendingSelectionResolves.delete(uri.toString());
+          resolve(msg.selection);
+        }
       }
     });
 
@@ -78,6 +90,39 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     if (panel) {
       panel.webview.postMessage(message);
     }
+  }
+
+  public requestSelection(uri: vscode.Uri): Promise<{ exact: string; lineRange: [number, number] } | null> {
+    const key = uri.toString();
+    return new Promise((resolve) => {
+      this.pendingSelectionResolves.set(key, resolve);
+      this.postMessage(uri, { type: "requestSelection" });
+      setTimeout(() => {
+        if (this.pendingSelectionResolves.get(key) === resolve) {
+          this.pendingSelectionResolves.delete(key);
+          resolve(null);
+        }
+      }, 1000);
+    });
+  }
+
+  public sendAnnotationHighlights(uri: vscode.Uri): void {
+    const relativePath = this.getRelativePath(uri);
+    const annotations = this.annotationStore.getByFile(relativePath);
+    const lineRanges = annotations.map((a) => a.target.lineRange);
+    this.postMessage(uri, { type: "updateAnnotationHighlights", lineRanges });
+  }
+
+  public getRelativePath(uri: vscode.Uri): string {
+    const folder = vscode.workspace.getWorkspaceFolder(uri);
+    if (folder) {
+      return uri.fsPath.slice(folder.uri.fsPath.length + 1).replace(/\\/g, "/");
+    }
+    return uri.fsPath.replace(/\\/g, "/");
+  }
+
+  public getOpenUris(): vscode.Uri[] {
+    return Array.from(this.webviews.keys()).map((s) => vscode.Uri.parse(s));
   }
 
   private startWatching(uri: vscode.Uri): void {

@@ -1,9 +1,13 @@
 import * as vscode from "vscode";
 import { MdvEditorProvider } from "./mdvEditorProvider";
 import { registerToggleCommand } from "./commands";
+import { AnnotationStore } from "./annotations";
 
 export function activate(context: vscode.ExtensionContext) {
-  const provider = new MdvEditorProvider(context);
+  const store = new AnnotationStore();
+  context.subscriptions.push({ dispose: () => store.dispose() });
+
+  const provider = new MdvEditorProvider(context, store);
 
   // Register custom editor provider
   context.subscriptions.push(

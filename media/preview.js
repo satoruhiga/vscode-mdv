@@ -222,10 +222,21 @@
       }
       var exact = sel.toString();
       var lineRange = getLineRangeFromSelection(sel);
+      // Include mouse position for comment input placement
+      var rect = sel.getRangeAt(0).getBoundingClientRect();
       vscodeApi.postMessage({
         type: "selectionResult",
-        selection: lineRange ? { exact: exact, lineRange: lineRange } : null,
+        selection: lineRange ? {
+          exact: exact,
+          lineRange: lineRange,
+          x: Math.round(rect.left),
+          y: Math.round(rect.bottom + 4),
+        } : null,
       });
+    }
+
+    if (msg.type === "showCommentInput") {
+      showCommentInput(msg.x, msg.y);
     }
 
     if (msg.type === "updateAnnotationHighlights") {
@@ -320,13 +331,67 @@
         annotatedLines.add(l);
       }
     });
+    // Only highlight leaf-level elements (skip containers that have child data-line elements)
     var elements = document.querySelectorAll("[data-line]");
     elements.forEach(function (el) {
       var line = parseInt(el.getAttribute("data-line"), 10);
-      if (annotatedLines.has(line)) {
+      if (annotatedLines.has(line) && !el.querySelector("[data-line]")) {
         el.classList.add("mdv-annotation-highlight");
       }
     });
+  }
+
+  function showCommentInput(x, y) {
+    dismissCommentInput();
+    var overlay = document.createElement("div");
+    overlay.className = "mdv-comment-overlay";
+    var box = document.createElement("div");
+    box.className = "mdv-comment-input";
+    // Keep within viewport
+    var left = Math.min(x, window.innerWidth - 280);
+    var top = Math.min(y, window.innerHeight - 120);
+    box.style.left = Math.max(0, left) + "px";
+    box.style.top = Math.max(0, top) + "px";
+
+    var textarea = document.createElement("textarea");
+    textarea.placeholder = "Enter your comment...";
+    textarea.rows = 3;
+
+    var hint = document.createElement("div");
+    hint.className = "mdv-comment-hint";
+    hint.textContent = "Enter to save, Shift+Enter for newline, Esc to cancel";
+
+    textarea.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        var body = textarea.value;
+        dismissCommentInput();
+        vscodeApi.postMessage({ type: "commentSubmit", body: body });
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        dismissCommentInput();
+        vscodeApi.postMessage({ type: "commentCancel" });
+      }
+    });
+
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) {
+        dismissCommentInput();
+        vscodeApi.postMessage({ type: "commentCancel" });
+      }
+    });
+
+    box.appendChild(textarea);
+    box.appendChild(hint);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    textarea.focus();
+  }
+
+  function dismissCommentInput() {
+    var existing = document.querySelector(".mdv-comment-overlay");
+    if (existing) existing.remove();
   }
 
   function escapeHtml(text) {

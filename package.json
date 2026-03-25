@@ -14,7 +14,7 @@
         "viewType": "mdv.preview",
         "displayName": "mdv Preview",
         "selector": [{ "filenamePattern": "*.md" }],
-        "priority": "default"
+        "priority": "option"
       }
     ],
     "commands": [

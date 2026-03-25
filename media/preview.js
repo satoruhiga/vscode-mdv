@@ -245,7 +245,7 @@
   function scrollToLine(line) {
     var target = findClosestElement(line);
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.scrollIntoView({ behavior: "instant", block: "start" });
     }
   }
 

@@ -11,7 +11,6 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly visibleLines = new Map<string, number>();
   private readonly pendingSelectionResolves = new Map<string, (sel: any) => void>();
-  private commentMessageListeners: Array<(msg: any, uri: vscode.Uri) => void> = [];
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -52,9 +51,6 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
           this.pendingSelectionResolves.delete(uri.toString());
           resolve(msg.selection);
         }
-      }
-      if (msg.type === "commentSubmit" || msg.type === "commentCancel") {
-        this.commentMessageListeners.forEach((fn) => fn(msg, uri));
       }
     });
 
@@ -123,10 +119,6 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       return uri.fsPath.slice(folder.uri.fsPath.length + 1).replace(/\\/g, "/");
     }
     return uri.fsPath.replace(/\\/g, "/");
-  }
-
-  public onCommentMessage(fn: (msg: any, uri: vscode.Uri) => void): void {
-    this.commentMessageListeners.push(fn);
   }
 
   public getOpenUris(): vscode.Uri[] {

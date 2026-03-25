@@ -31,6 +31,16 @@ export class AnnotationPanelProvider implements vscode.WebviewViewProvider {
       if (msg.type === "update") {
         this.store.update(msg.id, msg.body);
       }
+      if (msg.type === "edit") {
+        vscode.window.showInputBox({
+          prompt: "Edit your comment",
+          value: msg.body || "",
+        }).then((newBody) => {
+          if (newBody !== undefined) {
+            this.store.update(msg.id, newBody);
+          }
+        });
+      }
       if (msg.type === "copyAll") {
         const text = formatAllAnnotations(this.store.getAll());
         if (text) {

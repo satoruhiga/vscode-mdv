@@ -41,9 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Add Comment command — show inline input in the preview webview
-  let pendingCommentSelection: { uri: vscode.Uri; exact: string; lineRange: [number, number] } | null = null;
-
+  // Add Comment command
   context.subscriptions.push(
     vscode.commands.registerCommand("mdv.addComment", async () => {
       const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
@@ -63,28 +61,20 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      pendingCommentSelection = { uri, exact: selection.exact, lineRange: selection.lineRange };
-      provider.postMessage(uri, {
-        type: "showCommentInput",
-        x: selection.x ?? 100,
-        y: selection.y ?? 100,
+      const body = await vscode.window.showInputBox({
+        prompt: "Enter your comment",
+        placeHolder: "Comment on the selected text...",
       });
+      if (body === undefined) return;
+
+      const relativePath = provider.getRelativePath(uri);
+      store.add(
+        { filePath: relativePath, lineRange: selection.lineRange, exact: selection.exact },
+        body || ""
+      );
+      provider.sendAnnotationHighlights(uri);
     })
   );
-
-  // Handle comment submit/cancel from webview
-  provider.onCommentMessage((msg, uri) => {
-    if (msg.type === "commentSubmit" && pendingCommentSelection) {
-      const { exact, lineRange } = pendingCommentSelection;
-      const relativePath = provider.getRelativePath(pendingCommentSelection.uri);
-      store.add({ filePath: relativePath, lineRange, exact }, msg.body || "");
-      provider.sendAnnotationHighlights(pendingCommentSelection.uri);
-      pendingCommentSelection = null;
-    }
-    if (msg.type === "commentCancel") {
-      pendingCommentSelection = null;
-    }
-  });
 
   // Copy All Annotations command
   context.subscriptions.push(

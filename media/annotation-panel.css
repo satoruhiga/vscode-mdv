@@ -1,6 +1,6 @@
 body {
   font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
+  font-size: var(--vscode-editor-font-size);
   color: var(--vscode-foreground);
   background: var(--vscode-sideBar-background);
   padding: 0;
@@ -25,7 +25,6 @@ body {
 }
 
 .annotation-location {
-  font-size: 0.8em;
   color: var(--vscode-textLink-foreground);
   font-family: var(--vscode-editor-font-family);
 }
@@ -36,7 +35,6 @@ body {
   color: var(--vscode-descriptionForeground);
   cursor: pointer;
   padding: 2px 4px;
-  font-size: 0.85em;
 }
 
 .annotation-actions button:hover {
@@ -44,7 +42,6 @@ body {
 }
 
 .annotation-quote {
-  font-size: 0.85em;
   color: var(--vscode-descriptionForeground);
   border-left: 2px solid var(--vscode-textBlockQuote-border);
   padding-left: 0.5rem;
@@ -55,7 +52,6 @@ body {
 }
 
 .annotation-body {
-  font-size: 0.9em;
   white-space: pre-wrap;
   margin-top: 0.25rem;
 }

@@ -24,6 +24,7 @@
         '<div class="annotation-header">' +
           '<span class="annotation-location">' + escapeHtml(loc) + '</span>' +
           '<span class="annotation-actions">' +
+            '<button class="btn-edit" title="Edit">\u270E</button>' +
             '<button class="btn-delete" title="Delete">\u2715</button>' +
           '</span>' +
         '</div>' +
@@ -32,6 +33,18 @@
       '</div>';
     }
     root.innerHTML = html;
+
+    var editButtons = root.querySelectorAll(".btn-edit");
+    editButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var el = btn.closest(".annotation");
+        var id = el.getAttribute("data-id");
+        var a = annotations.find(function (x) { return x.id === id; });
+        if (a) {
+          vscodeApi.postMessage({ type: "edit", id: id, body: a.body });
+        }
+      });
+    });
 
     var deleteButtons = root.querySelectorAll(".btn-delete");
     deleteButtons.forEach(function (btn) {

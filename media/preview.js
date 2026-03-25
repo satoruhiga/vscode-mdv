@@ -235,10 +235,6 @@
       });
     }
 
-    if (msg.type === "showCommentInput") {
-      showCommentInput(msg.x, msg.y);
-    }
-
     if (msg.type === "updateAnnotationHighlights") {
       updateAnnotationHighlights(msg.lineRanges);
     }
@@ -339,59 +335,6 @@
         el.classList.add("mdv-annotation-highlight");
       }
     });
-  }
-
-  function showCommentInput(x, y) {
-    dismissCommentInput();
-    var overlay = document.createElement("div");
-    overlay.className = "mdv-comment-overlay";
-    var box = document.createElement("div");
-    box.className = "mdv-comment-input";
-    // Keep within viewport
-    var left = Math.min(x, window.innerWidth - 280);
-    var top = Math.min(y, window.innerHeight - 120);
-    box.style.left = Math.max(0, left) + "px";
-    box.style.top = Math.max(0, top) + "px";
-
-    var textarea = document.createElement("textarea");
-    textarea.placeholder = "Enter your comment...";
-    textarea.rows = 3;
-
-    var hint = document.createElement("div");
-    hint.className = "mdv-comment-hint";
-    hint.textContent = "Enter to save, Shift+Enter for newline, Esc to cancel";
-
-    textarea.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        var body = textarea.value;
-        dismissCommentInput();
-        vscodeApi.postMessage({ type: "commentSubmit", body: body });
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        dismissCommentInput();
-        vscodeApi.postMessage({ type: "commentCancel" });
-      }
-    });
-
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) {
-        dismissCommentInput();
-        vscodeApi.postMessage({ type: "commentCancel" });
-      }
-    });
-
-    box.appendChild(textarea);
-    box.appendChild(hint);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-    textarea.focus();
-  }
-
-  function dismissCommentInput() {
-    var existing = document.querySelector(".mdv-comment-overlay");
-    if (existing) existing.remove();
   }
 
   function escapeHtml(text) {

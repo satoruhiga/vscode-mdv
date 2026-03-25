@@ -2,7 +2,7 @@
   "name": "vscode-mdv",
   "displayName": "mdv - Markdown Viewer",
   "description": "Rich Markdown preview with GFM, syntax highlighting, math, and diagrams",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "engines": { "vscode": "^1.96.0" },
   "categories": ["Other"],

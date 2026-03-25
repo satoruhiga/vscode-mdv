@@ -9,6 +9,24 @@
   "main": "./out/extension.js",
   "activationEvents": [],
   "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "mdv-panel",
+          "title": "mdv",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "views": {
+      "mdv-panel": [
+        {
+          "type": "webview",
+          "id": "mdv.annotationPanel",
+          "name": "Annotations"
+        }
+      ]
+    },
     "customEditors": [
       {
         "viewType": "mdv.preview",
@@ -27,10 +45,32 @@
         "command": "mdv.reload",
         "title": "Reload Preview",
         "category": "mdv"
+      },
+      {
+        "command": "mdv.addComment",
+        "title": "Add Comment",
+        "category": "mdv"
+      },
+      {
+        "command": "mdv.copyAllAnnotations",
+        "title": "Copy All Annotations",
+        "category": "mdv",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "mdv.clearAnnotations",
+        "title": "Clear Annotations",
+        "category": "mdv",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
       "webview/context": [
+        {
+          "command": "mdv.addComment",
+          "when": "webviewId == 'mdv.preview'",
+          "group": "1_annotation"
+        },
         {
           "command": "mdv.reload",
           "when": "webviewId == 'mdv.preview'",
@@ -40,6 +80,18 @@
           "command": "mdv.toggleEditor",
           "when": "webviewId == 'mdv.preview'",
           "group": "2_mdv@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "mdv.copyAllAnnotations",
+          "when": "view == 'mdv.annotationPanel'",
+          "group": "navigation"
+        },
+        {
+          "command": "mdv.clearAnnotations",
+          "when": "view == 'mdv.annotationPanel'",
+          "group": "navigation"
         }
       ]
     },

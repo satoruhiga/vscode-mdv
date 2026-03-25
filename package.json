@@ -20,9 +20,29 @@
     "commands": [
       {
         "command": "mdv.toggleEditor",
-        "title": "mdv: Toggle Preview / Text Editor"
+        "title": "Toggle Preview / Text Editor",
+        "category": "mdv"
+      },
+      {
+        "command": "mdv.reload",
+        "title": "Reload Preview",
+        "category": "mdv"
       }
     ],
+    "menus": {
+      "webview/context": [
+        {
+          "command": "mdv.reload",
+          "when": "webviewId == 'mdv.preview'",
+          "group": "2_mdv@1"
+        },
+        {
+          "command": "mdv.toggleEditor",
+          "when": "webviewId == 'mdv.preview'",
+          "group": "2_mdv@2"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "mdv.toggleEditor",

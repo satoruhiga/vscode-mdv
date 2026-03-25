@@ -46,6 +46,12 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     }
   }
 
+  public async refreshAll(): Promise<void> {
+    for (const [uriStr, panel] of this.webviews) {
+      await this.updateWebview(panel, vscode.Uri.parse(uriStr));
+    }
+  }
+
   public hasWebview(uri: vscode.Uri): boolean {
     return this.webviews.has(uri.toString());
   }
@@ -107,7 +113,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     .prose pre code, .shiki code { font-family: ${fontFamily}; }
   </style>
 </head>
-<body>
+<body data-vscode-context='{"webviewSection": "preview"}'>
   <article class="prose">
     ${bodyHtml}
   </article>

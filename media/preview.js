@@ -213,6 +213,24 @@
     if (msg.type === "scrollToLine") {
       scrollToLine(msg.line);
     }
+
+    if (msg.type === "requestSelection") {
+      var sel = window.getSelection();
+      if (!sel || sel.isCollapsed) {
+        vscodeApi.postMessage({ type: "selectionResult", selection: null });
+        return;
+      }
+      var exact = sel.toString();
+      var lineRange = getLineRangeFromSelection(sel);
+      vscodeApi.postMessage({
+        type: "selectionResult",
+        selection: lineRange ? { exact: exact, lineRange: lineRange } : null,
+      });
+    }
+
+    if (msg.type === "updateAnnotationHighlights") {
+      updateAnnotationHighlights(msg.lineRanges);
+    }
   });
 
   // Track visible line on scroll and report to extension
@@ -263,6 +281,52 @@
       }
     }
     return best;
+  }
+
+  function getLineRangeFromSelection(sel) {
+    if (sel.rangeCount === 0) return null;
+    var range = sel.getRangeAt(0);
+    var startLine = findDataLine(range.startContainer);
+    var endLine = findDataLine(range.endContainer);
+    if (startLine === null) return null;
+    if (endLine === null) endLine = startLine;
+    if (range.endOffset === 0 && endLine !== startLine) {
+      endLine = startLine;
+    }
+    var min = Math.min(startLine, endLine);
+    var max = Math.max(startLine, endLine);
+    return [min, max];
+  }
+
+  function findDataLine(node) {
+    var current = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (current && current !== document.body) {
+      var line = current.getAttribute && current.getAttribute("data-line");
+      if (line) return parseInt(line, 10);
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function updateAnnotationHighlights(lineRanges) {
+    var existing = document.querySelectorAll(".mdv-annotation-highlight");
+    existing.forEach(function (el) {
+      el.classList.remove("mdv-annotation-highlight");
+    });
+    if (!lineRanges || lineRanges.length === 0) return;
+    var annotatedLines = new Set();
+    lineRanges.forEach(function (range) {
+      for (var l = range[0]; l <= range[1]; l++) {
+        annotatedLines.add(l);
+      }
+    });
+    var elements = document.querySelectorAll("[data-line]");
+    elements.forEach(function (el) {
+      var line = parseInt(el.getAttribute("data-line"), 10);
+      if (annotatedLines.has(line)) {
+        el.classList.add("mdv-annotation-highlight");
+      }
+    });
   }
 
   function escapeHtml(text) {

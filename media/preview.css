@@ -347,6 +347,14 @@ code {
 /* Footnotes */
 .prose .footnotes { font-size: 0.875em; border-top: 1px solid #e5e7eb; margin-top: 2em; padding-top: 1em; }
 
+/* Annotation highlights */
+.mdv-annotation-highlight {
+  background-color: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #e5e7eb; }

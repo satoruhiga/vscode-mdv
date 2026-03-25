@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { MdvEditorProvider } from "./mdvEditorProvider";
 import { registerToggleCommand } from "./commands";
-import { AnnotationStore } from "./annotations";
+import { AnnotationStore, formatAllAnnotations } from "./annotations";
+import { AnnotationPanelProvider } from "./annotationPanelProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   const store = new AnnotationStore();
@@ -30,6 +31,75 @@ export function activate(context: vscode.ExtensionContext) {
       provider.refreshAll();
     })
   );
+
+  // Annotation panel
+  const panelProvider = new AnnotationPanelProvider(context, store);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      AnnotationPanelProvider.viewType,
+      panelProvider
+    )
+  );
+
+  // Add Comment command
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.addComment", async () => {
+      const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (!activeTab) return;
+      const tabInput = activeTab.input;
+      if (
+        !tabInput ||
+        typeof tabInput !== "object" ||
+        !("viewType" in tabInput) ||
+        (tabInput as any).viewType !== MdvEditorProvider.viewType
+      ) return;
+
+      const uri = (tabInput as any).uri as vscode.Uri;
+      const selection = await provider.requestSelection(uri);
+      if (!selection) {
+        vscode.window.showWarningMessage("No text selected in preview.");
+        return;
+      }
+
+      const body = await vscode.window.showInputBox({
+        prompt: "Enter your comment",
+        placeHolder: "Comment on the selected text...",
+      });
+      if (body === undefined) return;
+
+      const relativePath = provider.getRelativePath(uri);
+      store.add(
+        { filePath: relativePath, lineRange: selection.lineRange, exact: selection.exact },
+        body || ""
+      );
+      provider.sendAnnotationHighlights(uri);
+    })
+  );
+
+  // Copy All Annotations command
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.copyAllAnnotations", () => {
+      const text = formatAllAnnotations(store.getAll());
+      if (text) {
+        vscode.env.clipboard.writeText(text);
+        vscode.window.showInformationMessage("Annotations copied to clipboard.");
+      }
+    })
+  );
+
+  // Clear Annotations command
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.clearAnnotations", () => {
+      store.clear();
+    })
+  );
+
+  // Update highlights when annotations change
+  store.onDidChange(() => {
+    for (const uri of provider.getOpenUris()) {
+      provider.sendAnnotationHighlights(uri);
+    }
+  });
 
   // File watcher for changes via other VS Code instances / editors
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.md");

@@ -1,10 +1,13 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
 import { processMarkdown } from "./markdown/processor";
 
 export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = "mdv.preview";
 
   private readonly webviews = new Map<string, vscode.WebviewPanel>();
+  private readonly fileWatchers = new Map<string, fs.FSWatcher>();
+  private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -34,8 +37,10 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
 
     webviewPanel.onDidDispose(() => {
       this.webviews.delete(uri.toString());
+      this.stopWatching(uri);
     });
 
+    this.startWatching(uri);
     await this.updateWebview(webviewPanel, uri);
   }
 
@@ -54,6 +59,43 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
 
   public hasWebview(uri: vscode.Uri): boolean {
     return this.webviews.has(uri.toString());
+  }
+
+  private startWatching(uri: vscode.Uri): void {
+    const key = uri.toString();
+    this.stopWatching(uri);
+
+    try {
+      const watcher = fs.watch(uri.fsPath, () => {
+        const existing = this.debounceTimers.get(key);
+        if (existing) clearTimeout(existing);
+
+        this.debounceTimers.set(
+          key,
+          setTimeout(() => {
+            this.debounceTimers.delete(key);
+            this.refresh(uri);
+          }, 300)
+        );
+      });
+      this.fileWatchers.set(key, watcher);
+    } catch {
+      // File might not exist yet, ignore
+    }
+  }
+
+  private stopWatching(uri: vscode.Uri): void {
+    const key = uri.toString();
+    const watcher = this.fileWatchers.get(key);
+    if (watcher) {
+      watcher.close();
+      this.fileWatchers.delete(key);
+    }
+    const timer = this.debounceTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.debounceTimers.delete(key);
+    }
   }
 
   private async updateWebview(

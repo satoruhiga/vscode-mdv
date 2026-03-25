@@ -27,33 +27,12 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // File watcher for auto-refresh (external changes)
+  // File watcher for changes via other VS Code instances / editors
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.md");
   watcher.onDidChange((uri) => provider.refresh(uri));
   context.subscriptions.push(watcher);
 
-  // Auto-refresh on text document changes (e.g. Claude Code edits)
-  const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument((e) => {
-      const uri = e.document.uri;
-      if (!uri.fsPath.endsWith(".md") || !provider.hasWebview(uri)) return;
-
-      const key = uri.toString();
-      const existing = debounceTimers.get(key);
-      if (existing) clearTimeout(existing);
-
-      debounceTimers.set(
-        key,
-        setTimeout(() => {
-          debounceTimers.delete(key);
-          provider.refresh(uri);
-        }, 300)
-      );
-    })
-  );
-
-  // Also refresh on save from text editor
+  // Refresh on save from text editor
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
       if (doc.uri.fsPath.endsWith(".md")) {

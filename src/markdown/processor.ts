@@ -16,6 +16,7 @@ import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import { remarkFrontmatterExtract } from "./remarkFrontmatterExtract";
 import { rehypeFrontmatterTable } from "./rehypeFrontmatterTable";
 import { rehypeImagePath } from "./rehypeImagePath";
+import { rehypeSourceLine } from "./rehypeSourceLine";
 
 // Theme (light only)
 import githubLight from "shiki/themes/github-light.mjs";
@@ -129,6 +130,7 @@ export async function processMarkdown(
         rootPath: options.rootPath,
         convertFileSrc: options.convertFileSrc,
       })
+      .use(rehypeSourceLine)
       .use(rehypeKatex)
       .use(rehypeShikiFromHighlighter, highlighter as any, {
         theme: "github-light",

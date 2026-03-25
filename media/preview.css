@@ -115,6 +115,7 @@ code {
   border-radius: 0.1875rem;
   font-size: 0.875em;
   font-weight: normal;
+  word-break: break-all;
 }
 
 /* GFM Checkboxes */

@@ -11,14 +11,14 @@ export function activate(context: vscode.ExtensionContext) {
       MdvEditorProvider.viewType,
       provider,
       {
-        webviewOptions: { retainContextWhenHidden: true },
+        webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true },
         supportsMultipleEditorsPerDocument: false,
       }
     )
   );
 
   // Register toggle command
-  context.subscriptions.push(registerToggleCommand());
+  context.subscriptions.push(registerToggleCommand(provider));
 
   // Register reload command
   context.subscriptions.push(

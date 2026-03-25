@@ -8,6 +8,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   private readonly webviews = new Map<string, vscode.WebviewPanel>();
   private readonly fileWatchers = new Map<string, fs.FSWatcher>();
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly visibleLines = new Map<string, number>();
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -35,8 +36,15 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       ],
     };
 
+    webviewPanel.webview.onDidReceiveMessage((msg) => {
+      if (msg.type === "visibleLine" && typeof msg.line === "number") {
+        this.visibleLines.set(uri.toString(), msg.line);
+      }
+    });
+
     webviewPanel.onDidDispose(() => {
       this.webviews.delete(uri.toString());
+      this.visibleLines.delete(uri.toString());
       this.stopWatching(uri);
     });
 
@@ -59,6 +67,17 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
 
   public hasWebview(uri: vscode.Uri): boolean {
     return this.webviews.has(uri.toString());
+  }
+
+  public getVisibleLine(uri: vscode.Uri): number | undefined {
+    return this.visibleLines.get(uri.toString());
+  }
+
+  public postMessage(uri: vscode.Uri, message: unknown): void {
+    const panel = this.webviews.get(uri.toString());
+    if (panel) {
+      panel.webview.postMessage(message);
+    }
   }
 
   private startWatching(uri: vscode.Uri): void {

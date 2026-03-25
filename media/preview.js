@@ -203,6 +203,68 @@
 
   wrapImages();
 
+  // --- Extension messaging ---
+  var vscodeApi = acquireVsCodeApi();
+
+  window.addEventListener("message", function (event) {
+    var msg = event.data;
+    if (!msg) return;
+
+    if (msg.type === "scrollToLine") {
+      scrollToLine(msg.line);
+    }
+  });
+
+  // Track visible line on scroll and report to extension
+  var scrollTimer = null;
+  window.addEventListener("scroll", function () {
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function () {
+      var line = getVisibleLine();
+      if (line !== null) {
+        vscodeApi.postMessage({ type: "visibleLine", line: line });
+      }
+    }, 100);
+  });
+
+  function getVisibleLine() {
+    var elements = document.querySelectorAll("[data-line]");
+    for (var i = 0; i < elements.length; i++) {
+      var rect = elements[i].getBoundingClientRect();
+      if (rect.top >= 0) {
+        return parseInt(elements[i].getAttribute("data-line"), 10);
+      }
+    }
+    // All elements above viewport — return last one
+    if (elements.length > 0) {
+      return parseInt(elements[elements.length - 1].getAttribute("data-line"), 10);
+    }
+    return null;
+  }
+
+  function scrollToLine(line) {
+    var target = findClosestElement(line);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function findClosestElement(line) {
+    var elements = document.querySelectorAll("[data-line]");
+    var best = null;
+    var bestDist = Infinity;
+    for (var i = 0; i < elements.length; i++) {
+      var el = elements[i];
+      var elLine = parseInt(el.getAttribute("data-line"), 10);
+      var dist = Math.abs(elLine - line);
+      if (elLine <= line && dist < bestDist) {
+        bestDist = dist;
+        best = el;
+      }
+    }
+    return best;
+  }
+
   function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;

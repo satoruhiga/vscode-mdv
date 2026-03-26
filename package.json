@@ -2,7 +2,7 @@
   "name": "vscode-mdv",
   "displayName": "mdv - Markdown Viewer",
   "description": "Rich Markdown preview with GFM, syntax highlighting, math, and diagrams",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "engines": { "vscode": "^1.96.0" },
   "categories": ["Other"],
@@ -62,6 +62,12 @@
         "title": "Clear Annotations",
         "category": "mdv",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "mdv.openPreview",
+        "title": "Open with mdv",
+        "category": "mdv",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
@@ -80,6 +86,13 @@
           "command": "mdv.toggleEditor",
           "when": "webviewId == 'mdv.preview'",
           "group": "2_mdv@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "mdv.openPreview",
+          "when": "resourceExtname == '.md'",
+          "group": "navigation"
         }
       ],
       "view/title": [

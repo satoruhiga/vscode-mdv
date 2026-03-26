@@ -25,6 +25,21 @@ export function activate(context: vscode.ExtensionContext) {
   // Register toggle command
   context.subscriptions.push(registerToggleCommand(provider));
 
+  // Open Preview from explorer context menu
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.openPreview", (uri?: vscode.Uri) => {
+      if (!uri) {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor?.document.uri.fsPath.endsWith(".md")) {
+          uri = activeEditor.document.uri;
+        }
+      }
+      if (uri) {
+        vscode.commands.executeCommand("vscode.openWith", uri, MdvEditorProvider.viewType);
+      }
+    })
+  );
+
   // Register reload command
   context.subscriptions.push(
     vscode.commands.registerCommand("mdv.reload", () => {

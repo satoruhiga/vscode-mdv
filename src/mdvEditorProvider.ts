@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import * as fs from "fs";
 import { processMarkdown } from "./markdown/processor";
 import { AnnotationStore } from "./annotations";
+import { resolveMarkdownLink } from "./resolveLink";
 
 export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = "mdv.preview";
@@ -51,6 +53,9 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
           this.pendingSelectionResolves.delete(uri.toString());
           resolve(msg.selection);
         }
+      }
+      if (msg.type === "openFile" && typeof msg.href === "string") {
+        this.handleOpenFile(uri, msg.href);
       }
     });
 
@@ -123,6 +128,21 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
 
   public getOpenUris(): vscode.Uri[] {
     return Array.from(this.webviews.keys()).map((s) => vscode.Uri.parse(s));
+  }
+
+  private async handleOpenFile(
+    currentUri: vscode.Uri,
+    href: string
+  ): Promise<void> {
+    const currentDir = path.dirname(currentUri.fsPath);
+    const resolvedPath = resolveMarkdownLink(href, currentDir);
+
+    const targetUri = vscode.Uri.file(resolvedPath);
+    try {
+      await vscode.commands.executeCommand("vscode.open", targetUri);
+    } catch {
+      // File might not exist — silently ignore
+    }
   }
 
   private startWatching(uri: vscode.Uri): void {

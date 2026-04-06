@@ -240,6 +240,35 @@
     }
   });
 
+  // --- Link click interception ---
+  document.addEventListener("click", function (e) {
+    // Walk up from the event target to find the closest <a> element
+    var target = e.target;
+    while (target && target.tagName !== "A") {
+      target = target.parentElement;
+    }
+    if (!target || target.tagName !== "A") return;
+
+    var href = target.getAttribute("href");
+    if (!href) return;
+
+    // Fragment-only links are same-page anchors — skip
+    if (href.startsWith("#")) return;
+
+    // External URLs and mailto: let the default behavior handle them
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(href) && !/^[a-zA-Z]:[\\/]/.test(href)) return;
+
+    // Wiki-link (has .wiki-link class) or relative .md link
+    var isWikiLink = target.classList.contains("wiki-link");
+    var isMdLink = /\.md(#.*)?$/.test(href);
+
+    if (isWikiLink || isMdLink) {
+      e.preventDefault();
+      e.stopPropagation();
+      vscodeApi.postMessage({ type: "openFile", href: href });
+    }
+  });
+
   // Track visible line on scroll and report to extension
   var scrollTimer = null;
   window.addEventListener("scroll", function () {

@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import remarkBreaks from "remark-breaks";
 import remarkSupersub from "remark-supersub";
 import remarkDeflist from "remark-deflist";
+import { remarkMark } from "remark-mark-highlight";
 import remarkRehype from "remark-rehype";
 import rehypeKatex from "rehype-katex";
 import rehypeStringify from "rehype-stringify";
@@ -17,6 +18,7 @@ import { remarkFrontmatterExtract } from "./remarkFrontmatterExtract";
 import { rehypeFrontmatterTable } from "./rehypeFrontmatterTable";
 import { rehypeImagePath } from "./rehypeImagePath";
 import { rehypeSourceLine } from "./rehypeSourceLine";
+import { rehypeVideoEmbed } from "./rehypeVideoEmbed";
 
 // Theme (light only)
 import githubLight from "shiki/themes/github-light.mjs";
@@ -110,6 +112,7 @@ export async function processMarkdown(
       remarkBreaks,
       remarkSupersub,
       remarkDeflist,
+      remarkMark,
       remarkMath,
     ];
 
@@ -130,6 +133,7 @@ export async function processMarkdown(
         rootPath: options.rootPath,
         convertFileSrc: options.convertFileSrc,
       })
+      .use(rehypeVideoEmbed)
       .use(rehypeSourceLine)
       .use(rehypeKatex)
       .use(rehypeShikiFromHighlighter, highlighter as any, {

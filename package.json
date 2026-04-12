@@ -2,7 +2,7 @@
   "name": "vscode-mdv",
   "displayName": "mdv - Markdown Viewer",
   "description": "Rich Markdown preview with GFM, syntax highlighting, math, and diagrams",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "engines": {
     "vscode": "^1.96.0"
@@ -163,6 +163,7 @@
     "remark-deflist": "^1.0.0",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-mark-highlight": "^0.1.1",
     "remark-math": "^6.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",

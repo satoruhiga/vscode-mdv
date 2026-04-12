@@ -228,7 +228,8 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     content="default-src 'none';
       style-src ${cspSource} 'unsafe-inline';
       script-src ${cspSource} 'unsafe-inline';
-      img-src ${cspSource} data:;
+      img-src ${cspSource} data: https:;
+      media-src ${cspSource} https:;
       font-src ${cspSource};">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="${katexCssUri}">

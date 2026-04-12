@@ -344,6 +344,23 @@ code {
 .prose dt { font-weight: 600; margin-top: 1em; color: #111827; }
 .prose dd { margin-left: 1.625em; margin-top: 0.25em; }
 
+/* Mark (highlight) */
+.prose mark {
+  background-color: #fef08a;
+  color: #1f2937;
+  padding: 0.0625rem 0.125rem;
+  border-radius: 0.125rem;
+}
+
+/* Video */
+.prose video {
+  max-width: 100%;
+  height: auto;
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  border-radius: 0.25rem;
+}
+
 /* Footnotes */
 .prose .footnotes { font-size: 0.875em; border-top: 1px solid #e5e7eb; margin-top: 2em; padding-top: 1em; }
 

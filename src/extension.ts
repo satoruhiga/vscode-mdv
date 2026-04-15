@@ -47,6 +47,23 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Toggle Google Translate
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.toggleTranslate", async () => {
+      const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (!activeTab) return;
+      const tabInput = activeTab.input;
+      if (
+        !tabInput ||
+        typeof tabInput !== "object" ||
+        !("viewType" in tabInput) ||
+        (tabInput as any).viewType !== MdvEditorProvider.viewType
+      ) return;
+      const uri = (tabInput as any).uri as vscode.Uri;
+      await provider.toggleTranslate(uri);
+    })
+  );
+
   // Annotation panel
   const panelProvider = new AnnotationPanelProvider(context, store);
   context.subscriptions.push(

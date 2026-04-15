@@ -76,6 +76,11 @@
         "title": "Open with mdv",
         "category": "mdv",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "mdv.toggleTranslate",
+        "title": "Toggle Google Translate",
+        "category": "mdv"
       }
     ],
     "menus": {
@@ -94,6 +99,11 @@
           "command": "mdv.toggleEditor",
           "when": "webviewId == 'mdv.preview'",
           "group": "2_mdv@2"
+        },
+        {
+          "command": "mdv.toggleTranslate",
+          "when": "webviewId == 'mdv.preview'",
+          "group": "2_mdv@3"
         }
       ],
       "explorer/context": [
@@ -135,6 +145,16 @@
           "type": "string",
           "default": "Cascadia, Consolas, monospace",
           "description": "Font family for the preview"
+        },
+        "mdv.googleTranslate.targetLanguage": {
+          "type": "string",
+          "default": "ja",
+          "description": "Target language code for Google Translate (e.g. ja, en, zh-CN)"
+        },
+        "mdv.googleTranslate.pageLanguage": {
+          "type": "string",
+          "default": "auto",
+          "description": "Source page language code for Google Translate (use 'auto' to detect)"
         }
       }
     }

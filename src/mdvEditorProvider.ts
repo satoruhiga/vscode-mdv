@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { processMarkdown } from "./markdown/processor";
 import { AnnotationStore } from "./annotations";
 import { resolveMarkdownLink } from "./resolveLink";
+import { translateBatch } from "./translator";
 
 export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = "mdv.preview";
@@ -13,6 +14,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly visibleLines = new Map<string, number>();
   private readonly pendingSelectionResolves = new Map<string, (sel: any) => void>();
+  private readonly translateEnabled = new Set<string>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -57,11 +59,15 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       if (msg.type === "openFile" && typeof msg.href === "string") {
         this.handleOpenFile(uri, msg.href);
       }
+      if (msg.type === "translate" && Array.isArray(msg.texts) && typeof msg.requestId === "number") {
+        this.handleTranslate(uri, msg.requestId, msg.texts);
+      }
     });
 
     webviewPanel.onDidDispose(() => {
       this.webviews.delete(uri.toString());
       this.visibleLines.delete(uri.toString());
+      this.translateEnabled.delete(uri.toString());
       this.stopWatching(uri);
     });
 
@@ -84,6 +90,31 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
 
   public hasWebview(uri: vscode.Uri): boolean {
     return this.webviews.has(uri.toString());
+  }
+
+  public toggleTranslate(uri: vscode.Uri): void {
+    const key = uri.toString();
+    const enabled = !this.translateEnabled.has(key);
+    if (enabled) {
+      this.translateEnabled.add(key);
+    } else {
+      this.translateEnabled.delete(key);
+    }
+    const config = vscode.workspace.getConfiguration("mdv");
+    this.postMessage(uri, {
+      type: "setTranslateMode",
+      enabled,
+      from: config.get<string>("googleTranslate.pageLanguage", "auto"),
+      to: config.get<string>("googleTranslate.targetLanguage", "ja"),
+    });
+  }
+
+  private async handleTranslate(uri: vscode.Uri, requestId: number, texts: string[]): Promise<void> {
+    const config = vscode.workspace.getConfiguration("mdv");
+    const from = config.get<string>("googleTranslate.pageLanguage", "auto");
+    const to = config.get<string>("googleTranslate.targetLanguage", "ja");
+    const translated = await translateBatch(texts, from, to);
+    this.postMessage(uri, { type: "translateResult", requestId, translated });
   }
 
   public getVisibleLine(uri: vscode.Uri): number | undefined {
@@ -205,10 +236,11 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       ? result.html
       : `<div class="error-banner">${escapeHtml(result.error)}</div><pre>${escapeHtml(markdownText)}</pre>`;
 
-    panel.webview.html = this.getHtmlForWebview(panel.webview, html);
+    const translateEnabled = this.translateEnabled.has(uri.toString());
+    panel.webview.html = this.getHtmlForWebview(panel.webview, html, translateEnabled);
   }
 
-  private getHtmlForWebview(webview: vscode.Webview, bodyHtml: string): string {
+  private getHtmlForWebview(webview: vscode.Webview, bodyHtml: string, translateEnabled: boolean): string {
     const mediaUri = vscode.Uri.joinPath(this.context.extensionUri, "media");
     const previewCssUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaUri, "preview.css"));
     const katexCssUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaUri, "katex", "katex.min.css"));
@@ -219,6 +251,8 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     const config = vscode.workspace.getConfiguration("mdv");
     const fontSize = config.get<number>("fontSize", 16);
     const fontFamily = config.get<string>("fontFamily", "Cascadia, Consolas, monospace");
+    const targetLang = config.get<string>("googleTranslate.targetLanguage", "ja");
+    const pageLang = config.get<string>("googleTranslate.pageLanguage", "auto");
 
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -238,9 +272,11 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     html, body { font-family: ${fontFamily}; }
     .prose { font-size: ${fontSize}px; }
     .prose pre code, .shiki code { font-family: ${fontFamily}; }
+    .mdv-translate-banner { position: sticky; top: 0; z-index: 1000; padding: 4px 12px; font-size: 11px; background: var(--vscode-editorInfo-background, rgba(100,148,237,0.15)); color: var(--vscode-descriptionForeground); border-bottom: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.3)); }
   </style>
 </head>
-<body data-vscode-context='{"webviewSection": "preview"}'>
+<body data-vscode-context='{"webviewSection": "preview"}' data-translate="${translateEnabled ? "1" : "0"}" data-translate-from="${escapeHtml(pageLang)}" data-translate-to="${escapeHtml(targetLang)}">
+  <div class="mdv-translate-banner" style="display:${translateEnabled ? "block" : "none"}">Translating to <strong class="mdv-translate-target">${escapeHtml(targetLang)}</strong> via Google Translate (on-demand)</div>
   <article class="prose">
     ${bodyHtml}
   </article>

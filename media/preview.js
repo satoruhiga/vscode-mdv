@@ -206,9 +206,157 @@
   // --- Extension messaging ---
   var vscodeApi = acquireVsCodeApi();
 
+  // --- On-demand translation ---
+  var SKIP_TRANSLATE_TAGS = { CODE: 1, PRE: 1, SCRIPT: 1, STYLE: 1, SVG: 1, MATH: 1 };
+  var SKIP_TRANSLATE_CLASSES = ["katex", "mermaid-interactive", "image-interactive", "mermaid-error"];
+  var BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th, dt, dd, figcaption, summary";
+  var translateState = {
+    enabled: document.body.dataset.translate === "1",
+    nextNodeId: 1,
+    nextRequestId: 1,
+    pendingRequests: {}, // requestId -> { nodes: [], originals: [] }
+    observer: null,
+    translatedBlocks: new WeakSet(),
+  };
+
+  function isSkippedAncestor(el) {
+    var cur = el;
+    while (cur && cur !== document.body) {
+      if (SKIP_TRANSLATE_TAGS[cur.tagName]) return true;
+      if (cur.classList) {
+        for (var i = 0; i < SKIP_TRANSLATE_CLASSES.length; i++) {
+          if (cur.classList.contains(SKIP_TRANSLATE_CLASSES[i])) return true;
+        }
+      }
+      cur = cur.parentElement;
+    }
+    return false;
+  }
+
+  function collectTextNodes(root) {
+    var result = [];
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (isSkippedAncestor(node.parentElement)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    var n;
+    while ((n = walker.nextNode())) result.push(n);
+    return result;
+  }
+
+  function wrapTextNodeAsSpan(textNode) {
+    var parent = textNode.parentElement;
+    if (parent && parent.classList && parent.classList.contains("mdv-tr")) {
+      return parent;
+    }
+    var span = document.createElement("span");
+    span.className = "mdv-tr";
+    span.dataset.original = textNode.nodeValue;
+    span.textContent = textNode.nodeValue;
+    textNode.parentNode.replaceChild(span, textNode);
+    return span;
+  }
+
+  function translateBlock(block) {
+    if (translateState.translatedBlocks.has(block)) return;
+    translateState.translatedBlocks.add(block);
+
+    var textNodes = collectTextNodes(block);
+    if (textNodes.length === 0) return;
+
+    var spans = textNodes.map(wrapTextNodeAsSpan);
+    var texts = spans.map(function (s) { return s.dataset.original; });
+
+    var requestId = translateState.nextRequestId++;
+    translateState.pendingRequests[requestId] = { spans: spans };
+    vscodeApi.postMessage({ type: "translate", requestId: requestId, texts: texts });
+  }
+
+  function applyTranslation(requestId, translated) {
+    var pending = translateState.pendingRequests[requestId];
+    if (!pending) return;
+    delete translateState.pendingRequests[requestId];
+    for (var i = 0; i < pending.spans.length; i++) {
+      var span = pending.spans[i];
+      if (translated[i] != null && translated[i] !== span.dataset.original) {
+        span.textContent = translated[i];
+      }
+    }
+  }
+
+  function restoreOriginals() {
+    var spans = document.querySelectorAll("span.mdv-tr");
+    spans.forEach(function (span) {
+      if (span.dataset.original != null) {
+        span.textContent = span.dataset.original;
+      }
+    });
+  }
+
+  function startTranslateObserver() {
+    if (translateState.observer) return;
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          translateBlock(entry.target);
+        }
+      });
+    }, { rootMargin: "200px 0px", threshold: 0 });
+    document.querySelectorAll(BLOCK_SELECTOR).forEach(function (el) {
+      if (isSkippedAncestor(el.parentElement)) return;
+      obs.observe(el);
+    });
+    translateState.observer = obs;
+  }
+
+  function stopTranslateObserver() {
+    if (translateState.observer) {
+      translateState.observer.disconnect();
+      translateState.observer = null;
+    }
+    translateState.translatedBlocks = new WeakSet();
+    translateState.pendingRequests = {};
+  }
+
+  function setTranslateBannerVisible(visible, to) {
+    var banner = document.querySelector(".mdv-translate-banner");
+    if (banner) {
+      banner.style.display = visible ? "block" : "none";
+      if (to) {
+        var target = banner.querySelector(".mdv-translate-target");
+        if (target) target.textContent = to;
+      }
+    }
+  }
+
+  if (translateState.enabled) {
+    startTranslateObserver();
+  }
+
   window.addEventListener("message", function (event) {
     var msg = event.data;
     if (!msg) return;
+
+    if (msg.type === "setTranslateMode") {
+      translateState.enabled = !!msg.enabled;
+      if (translateState.enabled) {
+        setTranslateBannerVisible(true, msg.to);
+        startTranslateObserver();
+      } else {
+        stopTranslateObserver();
+        restoreOriginals();
+        setTranslateBannerVisible(false);
+      }
+      return;
+    }
+
+    if (msg.type === "translateResult") {
+      applyTranslation(msg.requestId, msg.translated);
+      return;
+    }
 
     if (msg.type === "scrollToLine") {
       scrollToLine(msg.line);

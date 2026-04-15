@@ -2,6 +2,8 @@
 
 A rich Markdown preview that opens `.md` files as a custom editor. Built for readers and note-takers who want GFM, code highlighting, math, diagrams, wiki-links, and on-demand translation in one place.
 
+https://github.com/user-attachments/assets/3f1548a6-e96b-4e07-8728-f3d96f220a54
+
 ## Features
 
 - **GitHub Flavored Markdown** — tables, task lists, strikethrough, autolinks

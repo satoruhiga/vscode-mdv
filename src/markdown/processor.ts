@@ -109,9 +109,9 @@ export async function processMarkdown(
         },
       ],
       remarkGfm,
+      remarkDeflist,
       remarkBreaks,
       remarkSupersub,
-      remarkDeflist,
       remarkMark,
       remarkMath,
     ];

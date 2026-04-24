@@ -243,6 +243,20 @@ code {
   overflow: hidden;
 }
 
+.mermaid-interactive.mdv-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.mermaid-interactive.mdv-fullscreen .mermaid-viewport {
+  height: 100vh;
+  min-height: 100vh;
+}
+
 .mermaid-viewport {
   overflow: hidden;
   min-height: 300px;

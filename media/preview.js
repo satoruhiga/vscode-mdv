@@ -168,12 +168,39 @@
       applyTransform();
     };
 
+    var btnFullscreen = document.createElement("button");
+    btnFullscreen.className = "mermaid-zoom-btn";
+    btnFullscreen.textContent = "⛶";
+    btnFullscreen.title = "Toggle fullscreen";
+    btnFullscreen.onclick = function () {
+      var wrapper = viewport.parentElement;
+      if (!wrapper) return;
+      wrapper.classList.toggle("mdv-fullscreen");
+      btnFullscreen.textContent = wrapper.classList.contains("mdv-fullscreen") ? "✕" : "⛶";
+      btnFullscreen.title = wrapper.classList.contains("mdv-fullscreen") ? "Exit fullscreen" : "Toggle fullscreen";
+    };
+
     controls.appendChild(btnOut);
     controls.appendChild(label);
     controls.appendChild(btnIn);
     controls.appendChild(btnReset);
+    controls.appendChild(btnFullscreen);
     return controls;
   }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      var fs = document.querySelector(".mermaid-interactive.mdv-fullscreen");
+      if (fs) {
+        fs.classList.remove("mdv-fullscreen");
+        var btn = fs.querySelector(".mermaid-controls .mermaid-zoom-btn:last-child");
+        if (btn) {
+          btn.textContent = "⛶";
+          btn.title = "Toggle fullscreen";
+        }
+      }
+    }
+  });
 
   /**
    * Wrap images in zoomable containers.

@@ -236,14 +236,18 @@
   // --- On-demand translation ---
   var SKIP_TRANSLATE_TAGS = { CODE: 1, PRE: 1, SCRIPT: 1, STYLE: 1, SVG: 1, MATH: 1 };
   var SKIP_TRANSLATE_CLASSES = ["katex", "mermaid-interactive", "image-interactive", "mermaid-error"];
+  var PROTECT_SELECTOR = "code, pre, script, style, svg, math, .katex, .mermaid-interactive, .image-interactive, .mermaid-error";
   var BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th, dt, dd, figcaption, summary";
+  var PROTECT_OPEN = "";
+  var PROTECT_CLOSE = "";
+  var PROTECT_RE = /\s*(\d+)\s*/g;
   var translateState = {
     enabled: document.body.dataset.translate === "1",
-    nextNodeId: 1,
     nextRequestId: 1,
-    pendingRequests: {}, // requestId -> { nodes: [], originals: [] }
+    pendingRequests: {}, // requestId -> { block, fragments }
     observer: null,
     translatedBlocks: new WeakSet(),
+    originalHtml: new WeakMap(), // block -> original innerHTML
   };
 
   function isSkippedAncestor(el) {
@@ -260,65 +264,68 @@
     return false;
   }
 
-  function collectTextNodes(root) {
-    var result = [];
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: function (node) {
-        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        if (isSkippedAncestor(node.parentElement)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
+  function protectInlineFragments(block) {
+    var clone = block.cloneNode(true);
+    var fragments = [];
+    var nodes = clone.querySelectorAll(PROTECT_SELECTOR);
+    nodes.forEach(function (el) {
+      if (!clone.contains(el)) return; // ancestor was already replaced
+      var idx = fragments.length;
+      fragments.push(el.outerHTML);
+      var marker = document.createTextNode(PROTECT_OPEN + idx + PROTECT_CLOSE);
+      el.parentNode.replaceChild(marker, el);
     });
-    var n;
-    while ((n = walker.nextNode())) result.push(n);
-    return result;
+    return { html: clone.innerHTML, fragments: fragments };
   }
 
-  function wrapTextNodeAsSpan(textNode) {
-    var parent = textNode.parentElement;
-    if (parent && parent.classList && parent.classList.contains("mdv-tr")) {
-      return parent;
-    }
-    var span = document.createElement("span");
-    span.className = "mdv-tr";
-    span.dataset.original = textNode.nodeValue;
-    span.textContent = textNode.nodeValue;
-    textNode.parentNode.replaceChild(span, textNode);
-    return span;
+  function restoreProtectedFragments(html, fragments) {
+    if (!fragments.length) return html;
+    return html.replace(PROTECT_RE, function (_, i) {
+      var idx = Number(i);
+      return idx >= 0 && idx < fragments.length ? fragments[idx] : "";
+    });
   }
 
   function translateBlock(block) {
     if (translateState.translatedBlocks.has(block)) return;
     translateState.translatedBlocks.add(block);
 
-    var textNodes = collectTextNodes(block);
-    if (textNodes.length === 0) return;
+    if (!translateState.originalHtml.has(block)) {
+      translateState.originalHtml.set(block, block.innerHTML);
+    }
 
-    var spans = textNodes.map(wrapTextNodeAsSpan);
-    var texts = spans.map(function (s) { return s.dataset.original; });
+    var protectedResult = protectInlineFragments(block);
+    var stripped = protectedResult.html.replace(PROTECT_RE, "").replace(/<[^>]+>/g, "");
+    if (!stripped.trim()) return;
 
     var requestId = translateState.nextRequestId++;
-    translateState.pendingRequests[requestId] = { spans: spans };
-    vscodeApi.postMessage({ type: "translate", requestId: requestId, texts: texts });
+    translateState.pendingRequests[requestId] = {
+      block: block,
+      fragments: protectedResult.fragments,
+    };
+    vscodeApi.postMessage({
+      type: "translate",
+      requestId: requestId,
+      texts: [protectedResult.html],
+    });
   }
 
   function applyTranslation(requestId, translated) {
     var pending = translateState.pendingRequests[requestId];
     if (!pending) return;
     delete translateState.pendingRequests[requestId];
-    for (var i = 0; i < pending.spans.length; i++) {
-      var span = pending.spans[i];
-      if (translated[i] != null && translated[i] !== span.dataset.original) {
-        span.textContent = translated[i];
-      }
-    }
+    if (!translateState.enabled) return;
+    if (!translated || translated.length === 0) return;
+    var translatedHtml = translated[0];
+    if (translatedHtml == null) return;
+    pending.block.innerHTML = restoreProtectedFragments(translatedHtml, pending.fragments);
   }
 
   function restoreOriginals() {
-    var spans = document.querySelectorAll("span.mdv-tr");
-    spans.forEach(function (span) {
-      if (span.dataset.original != null) {
-        span.textContent = span.dataset.original;
+    document.querySelectorAll(BLOCK_SELECTOR).forEach(function (block) {
+      var orig = translateState.originalHtml.get(block);
+      if (orig != null) {
+        block.innerHTML = orig;
       }
     });
   }

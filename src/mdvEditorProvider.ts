@@ -41,6 +41,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(this.context.extensionUri, "media"),
+        vscode.Uri.file(path.dirname(uri.fsPath)),
         ...(vscode.workspace.workspaceFolders?.map((f) => f.uri) ?? []),
       ],
     };

@@ -9,6 +9,7 @@ import remarkSupersub from "remark-supersub";
 import remarkDeflist from "remark-deflist";
 import { remarkMark } from "remark-mark-highlight";
 import remarkRehype from "remark-rehype";
+import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import rehypeStringify from "rehype-stringify";
 import { createHighlighterCore } from "shiki/core";
@@ -127,13 +128,14 @@ export async function processMarkdown(
 
     const result = await processor
       .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
       .use(rehypeFrontmatterTable)
+      .use(rehypeVideoEmbed)
       .use(rehypeImagePath, {
         basePath: options.basePath,
         rootPath: options.rootPath,
         convertFileSrc: options.convertFileSrc,
       })
-      .use(rehypeVideoEmbed)
       .use(rehypeSourceLine)
       .use(rehypeKatex)
       .use(rehypeShikiFromHighlighter, highlighter as any, {

@@ -31,6 +31,7 @@ function getDirectory(filePath: string): string {
 function resolvePath(relativePath: string, baseDir: string): string {
   const normalized = normalizePath(relativePath);
   const base = normalizePath(baseDir);
+  const isAbsolutePosixPath = base.startsWith("/");
 
   let path = normalized;
   if (path.startsWith("./")) {
@@ -49,7 +50,8 @@ function resolvePath(relativePath: string, baseDir: string): string {
     }
   }
 
-  return result.join("/");
+  const resolved = result.join("/");
+  return isAbsolutePosixPath ? `/${resolved}` : resolved;
 }
 
 export function rehypeImagePath(options: RehypeImagePathOptions = {}) {
@@ -63,39 +65,55 @@ export function rehypeImagePath(options: RehypeImagePathOptions = {}) {
     const baseDir = getDirectory(basePath);
 
     visit(tree, "element", (node: Element) => {
-      if (node.tagName !== "img") {
+      const pathProperties = getPathProperties(node.tagName);
+      if (!pathProperties.length) {
         return;
       }
 
-      const src = node.properties?.src;
-      if (typeof src !== "string" || !src) {
-        return;
-      }
-
-      if (isExternalUrl(src)) {
-        return;
-      }
-
-      let absolutePath: string;
-
-      if (isRootRelative(src)) {
-        if (rootPath) {
-          absolutePath = normalizePath(rootPath) + src;
-        } else {
-          return;
+      for (const propertyName of pathProperties) {
+        const src = node.properties?.[propertyName];
+        if (typeof src !== "string" || !src) {
+          continue;
         }
-      } else {
-        absolutePath = resolvePath(src, baseDir);
-      }
 
-      node.properties = node.properties || {};
-      node.properties["dataOriginalPath"] = absolutePath;
+        if (isExternalUrl(src)) {
+          continue;
+        }
 
-      if (convertFileSrc) {
-        node.properties.src = convertFileSrc(absolutePath);
-      } else {
-        node.properties.src = absolutePath;
+        let absolutePath: string;
+
+        if (isRootRelative(src)) {
+          if (rootPath) {
+            absolutePath = normalizePath(rootPath) + src;
+          } else {
+            continue;
+          }
+        } else {
+          absolutePath = resolvePath(src, baseDir);
+        }
+
+        node.properties = node.properties || {};
+        node.properties["dataOriginalPath"] = absolutePath;
+
+        if (convertFileSrc) {
+          node.properties[propertyName] = convertFileSrc(absolutePath);
+        } else {
+          node.properties[propertyName] = absolutePath;
+        }
       }
     });
   };
+}
+
+function getPathProperties(tagName: string): string[] {
+  if (tagName === "img") {
+    return ["src"];
+  }
+  if (tagName === "video") {
+    return ["src", "poster"];
+  }
+  if (tagName === "source") {
+    return ["src"];
+  }
+  return [];
 }

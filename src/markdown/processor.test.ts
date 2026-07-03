@@ -43,3 +43,15 @@ describe("processMarkdown video embeds", () => {
     expect(result.html).toContain("controls loop muted playsinline");
   });
 });
+
+describe("processMarkdown source lines", () => {
+  it("adds start and end source lines for multi-line list items", async () => {
+    const result = await processMarkdown("- first line\n  continued line");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).toContain('data-line="1"');
+    expect(result.html).toContain('data-line-end="2"');
+  });
+});

@@ -16,6 +16,11 @@ export function rehypeSourceLine() {
 
       node.properties = node.properties || {};
       node.properties["dataLine"] = line;
+
+      const endLine = node.position?.end?.line;
+      if (endLine != null && endLine !== line) {
+        node.properties["dataLineEnd"] = endLine;
+      }
     });
   };
 }

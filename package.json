@@ -2,7 +2,7 @@
   "name": "vscode-mdv",
   "displayName": "mdv - Markdown Viewer",
   "description": "Rich Markdown preview with GFM, syntax highlighting, math, and diagrams",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "private": true,
   "engines": {
     "vscode": "^1.96.0"
@@ -60,6 +60,12 @@
         "category": "mdv"
       },
       {
+        "command": "mdv.copySelectedRange",
+        "title": "Copy Selected Markdown Range",
+        "category": "mdv",
+        "icon": "$(copy)"
+      },
+      {
         "command": "mdv.copyAllAnnotations",
         "title": "Copy All Annotations",
         "category": "mdv",
@@ -89,6 +95,11 @@
           "command": "mdv.addComment",
           "when": "webviewId == 'mdv.preview'",
           "group": "1_annotation"
+        },
+        {
+          "command": "mdv.copySelectedRange",
+          "when": "webviewId == 'mdv.preview'",
+          "group": "1_annotation@2"
         },
         {
           "command": "mdv.reload",

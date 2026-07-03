@@ -108,6 +108,33 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Copy selected Markdown source location
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mdv.copySelectedRange", async () => {
+      const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (!activeTab) return;
+      const tabInput = activeTab.input;
+      if (
+        !tabInput ||
+        typeof tabInput !== "object" ||
+        !("viewType" in tabInput) ||
+        (tabInput as any).viewType !== MdvEditorProvider.viewType
+      ) return;
+
+      const uri = (tabInput as any).uri as vscode.Uri;
+      const selection = await provider.requestSelection(uri);
+      if (!selection) {
+        vscode.window.showWarningMessage("No text selected in preview.");
+        return;
+      }
+
+      const relativePath = provider.getRelativePath(uri);
+      const text = formatMarkdownRange(relativePath, selection.lineRange);
+      await vscode.env.clipboard.writeText(text);
+      vscode.window.showInformationMessage(`Copied ${text}`);
+    })
+  );
+
   // Copy All Annotations command
   context.subscriptions.push(
     vscode.commands.registerCommand("mdv.copyAllAnnotations", () => {
@@ -149,3 +176,9 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+
+function formatMarkdownRange(filePath: string, lineRange: [number, number]): string {
+  const [start, end] = lineRange;
+  const loc = start === end ? `L${start}` : `L${start}-L${end}`;
+  return `${filePath}:${loc}`;
+}

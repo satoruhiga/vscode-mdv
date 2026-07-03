@@ -504,8 +504,11 @@
   function getLineRangeFromSelection(sel) {
     if (sel.rangeCount === 0) return null;
     var range = sel.getRangeAt(0);
-    var startLine = findDataLine(range.startContainer);
-    var endLine = findDataLine(range.endContainer);
+    var intersectingRange = getIntersectingLineRange(range);
+    if (intersectingRange) return intersectingRange;
+
+    var startLine = findDataLine(range.startContainer, "start");
+    var endLine = findDataLine(range.endContainer, "end");
     if (startLine === null) return null;
     if (endLine === null) endLine = startLine;
     if (range.endOffset === 0 && endLine !== startLine) {
@@ -516,11 +519,43 @@
     return [min, max];
   }
 
-  function findDataLine(node) {
+  function getIntersectingLineRange(range) {
+    var elements = document.querySelectorAll("[data-line]");
+    var min = null;
+    var max = null;
+
+    elements.forEach(function (el) {
+      if (el.querySelector("[data-line]")) return;
+      try {
+        if (!range.intersectsNode(el)) return;
+      } catch (_err) {
+        return;
+      }
+
+      var start = parseInt(el.getAttribute("data-line"), 10);
+      var endAttr = el.getAttribute("data-line-end");
+      var end = endAttr ? parseInt(endAttr, 10) : start;
+      if (!Number.isFinite(start)) return;
+      if (!Number.isFinite(end)) end = start;
+
+      min = min === null ? start : Math.min(min, start);
+      max = max === null ? end : Math.max(max, end);
+    });
+
+    return min === null || max === null ? null : [min, max];
+  }
+
+  function findDataLine(node, edge) {
     var current = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     while (current && current !== document.body) {
       var line = current.getAttribute && current.getAttribute("data-line");
-      if (line) return parseInt(line, 10);
+      if (line) {
+        if (edge === "end") {
+          var endLine = current.getAttribute("data-line-end");
+          if (endLine) return parseInt(endLine, 10);
+        }
+        return parseInt(line, 10);
+      }
       current = current.parentElement;
     }
     return null;

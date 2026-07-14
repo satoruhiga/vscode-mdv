@@ -3,9 +3,9 @@ import remarkParse from "remark-parse";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkWikiLink from "@flowershow/remark-wiki-link";
 import remarkGfm from "remark-gfm";
+import remarkCjkFriendly from "remark-cjk-friendly/parseOnly";
 import remarkMath from "remark-math";
 import remarkBreaks from "remark-breaks";
-import remarkSupersub from "remark-supersub";
 import remarkDeflist from "remark-deflist";
 import { remarkMark } from "remark-mark-highlight";
 import remarkRehype from "remark-rehype";
@@ -16,6 +16,7 @@ import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import { remarkFrontmatterExtract } from "./remarkFrontmatterExtract";
+import { remarkSupersub } from "./remarkSupersub";
 import { rehypeFrontmatterTable } from "./rehypeFrontmatterTable";
 import { rehypeImagePath } from "./rehypeImagePath";
 import { rehypeSourceLine } from "./rehypeSourceLine";
@@ -109,7 +110,8 @@ export async function processMarkdown(
           aliasDivider: "|",
         },
       ],
-      remarkGfm,
+      [remarkGfm, { singleTilde: false }],
+      remarkCjkFriendly,
       remarkDeflist,
       remarkBreaks,
       remarkSupersub,

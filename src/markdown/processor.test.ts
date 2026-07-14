@@ -55,3 +55,52 @@ describe("processMarkdown source lines", () => {
     expect(result.html).toContain('data-line-end="2"');
   });
 });
+
+describe("processMarkdown CJK emphasis", () => {
+  it("renders bold text ending in punctuation before Japanese text", async () => {
+    const result = await processMarkdown(
+      "入力の **5.547%**を落とし、maskは **`z<=85°`**を採用する"
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).toContain("<strong>5.547%</strong>を落とし");
+    expect(result.html).toContain("<strong><code>z&#x3C;=85°</code></strong>を採用する");
+  });
+
+  it("keeps standard bold syntax working", async () => {
+    const result = await processMarkdown("値は **31,860 splat** に固定する");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).toContain("<strong>31,860 splat</strong> に固定する");
+  });
+});
+
+describe("processMarkdown superscript and subscript", () => {
+  it("does not treat approximate values as subscript delimiters", async () => {
+    const result = await processMarkdown(
+      "Detect AprilGrid は off ~3 分 / prior_guided ~9 分。差 ~560s / ~144MB"
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).not.toContain("<sub>");
+    expect(result.html).toContain("off ~3 分 / prior_guided ~9 分");
+    expect(result.html).toContain("差 ~560s / ~144MB");
+  });
+
+  it("renders compact Pandoc-style superscript and subscript", async () => {
+    const result = await processMarkdown("H~2~O, E = mc^2^, and ~~removed~~");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).toContain("H<sub>2</sub>O");
+    expect(result.html).toContain("mc<sup>2</sup>");
+    expect(result.html).toContain("<del>removed</del>");
+  });
+});

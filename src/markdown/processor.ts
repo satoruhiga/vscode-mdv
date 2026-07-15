@@ -11,6 +11,7 @@ import { remarkMark } from "remark-mark-highlight";
 import remarkRehype from "remark-rehype";
 import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
+import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
@@ -131,6 +132,7 @@ export async function processMarkdown(
     const result = await processor
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
+      .use(rehypeSlug)
       .use(rehypeFrontmatterTable)
       .use(rehypeVideoEmbed)
       .use(rehypeImagePath, {

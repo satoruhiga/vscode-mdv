@@ -32,3 +32,15 @@ export function resolveMarkdownLink(
   // Resolve relative to the current document's directory
   return path.resolve(currentDir, filePath);
 }
+
+export function getMarkdownLinkFragment(href: string): string | undefined {
+  const hashIndex = href.indexOf("#");
+  if (hashIndex < 0 || hashIndex === href.length - 1) return undefined;
+
+  const fragment = href.substring(hashIndex + 1);
+  try {
+    return decodeURIComponent(fragment);
+  } catch {
+    return fragment;
+  }
+}

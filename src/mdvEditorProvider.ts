@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { processMarkdown } from "./markdown/processor";
 import { AnnotationStore } from "./annotations";
-import { resolveMarkdownLink } from "./resolveLink";
+import { getMarkdownLinkFragment, resolveMarkdownLink } from "./resolveLink";
 import { translateBatch } from "./translator";
 
 export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
@@ -14,6 +14,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly visibleLines = new Map<string, number>();
   private readonly pendingSelectionResolves = new Map<string, (sel: any) => void>();
+  private readonly pendingAnchors = new Map<string, string>();
   private readonly translateEnabled = new Set<string>();
 
   constructor(
@@ -168,11 +169,21 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
   ): Promise<void> {
     const currentDir = path.dirname(currentUri.fsPath);
     const resolvedPath = resolveMarkdownLink(href, currentDir);
+    const anchor = getMarkdownLinkFragment(href);
 
     const targetUri = vscode.Uri.file(resolvedPath);
+    const targetKey = targetUri.toString();
+    if (anchor) {
+      this.pendingAnchors.set(targetKey, anchor);
+    }
     try {
       await vscode.commands.executeCommand("vscode.open", targetUri);
+      if (anchor && this.webviews.has(targetKey)) {
+        this.pendingAnchors.delete(targetKey);
+        this.postMessage(targetUri, { type: "scrollToAnchor", anchor });
+      }
     } catch {
+      this.pendingAnchors.delete(targetKey);
       // File might not exist — silently ignore
     }
   }
@@ -238,10 +249,24 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
       : `<div class="error-banner">${escapeHtml(result.error)}</div><pre>${escapeHtml(markdownText)}</pre>`;
 
     const translateEnabled = this.translateEnabled.has(uri.toString());
-    panel.webview.html = this.getHtmlForWebview(panel.webview, html, translateEnabled);
+    const initialAnchor = this.pendingAnchors.get(uri.toString());
+    if (initialAnchor) {
+      this.pendingAnchors.delete(uri.toString());
+    }
+    panel.webview.html = this.getHtmlForWebview(
+      panel.webview,
+      html,
+      translateEnabled,
+      initialAnchor
+    );
   }
 
-  private getHtmlForWebview(webview: vscode.Webview, bodyHtml: string, translateEnabled: boolean): string {
+  private getHtmlForWebview(
+    webview: vscode.Webview,
+    bodyHtml: string,
+    translateEnabled: boolean,
+    initialAnchor?: string
+  ): string {
     const mediaUri = vscode.Uri.joinPath(this.context.extensionUri, "media");
     const previewCssUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaUri, "preview.css"));
     const katexCssUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaUri, "katex", "katex.min.css"));
@@ -276,7 +301,7 @@ export class MdvEditorProvider implements vscode.CustomReadonlyEditorProvider {
     .mdv-translate-banner { position: sticky; top: 0; z-index: 1000; padding: 4px 12px; font-size: 11px; background: var(--vscode-editorInfo-background, rgba(100,148,237,0.15)); color: var(--vscode-descriptionForeground); border-bottom: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.3)); }
   </style>
 </head>
-<body data-vscode-context='{"webviewSection": "preview"}' data-translate="${translateEnabled ? "1" : "0"}" data-translate-from="${escapeHtml(pageLang)}" data-translate-to="${escapeHtml(targetLang)}">
+<body data-vscode-context='{"webviewSection": "preview"}' data-translate="${translateEnabled ? "1" : "0"}" data-translate-from="${escapeHtml(pageLang)}" data-translate-to="${escapeHtml(targetLang)}" data-initial-anchor="${escapeHtml(initialAnchor ?? "")}">
   <div class="mdv-translate-banner" style="display:${translateEnabled ? "block" : "none"}">Translating to <strong class="mdv-translate-target">${escapeHtml(targetLang)}</strong> via Google Translate (on-demand)</div>
   <article class="prose">
     ${bodyHtml}

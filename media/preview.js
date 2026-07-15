@@ -396,6 +396,10 @@
       scrollToLine(msg.line);
     }
 
+    if (msg.type === "scrollToAnchor" && typeof msg.anchor === "string") {
+      scrollToAnchor(msg.anchor);
+    }
+
     if (msg.type === "requestSelection") {
       var sel = window.getSelection();
       if (!sel || sel.isCollapsed) {
@@ -434,8 +438,11 @@
     var href = target.getAttribute("href");
     if (!href) return;
 
-    // Fragment-only links are same-page anchors — skip
-    if (href.startsWith("#")) return;
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      scrollToAnchor(href.slice(1));
+      return;
+    }
 
     // External URLs and mailto: let the default behavior handle them
     if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(href) && !/^[a-zA-Z]:[\\/]/.test(href)) return;
@@ -517,6 +524,26 @@
     var min = Math.min(startLine, endLine);
     var max = Math.max(startLine, endLine);
     return [min, max];
+  }
+
+  function scrollToAnchor(anchor) {
+    var decodedAnchor = anchor;
+    try {
+      decodedAnchor = decodeURIComponent(anchor);
+    } catch (_) {
+      // Use the original fragment when it is not valid URI encoding.
+    }
+    var target = document.getElementById(decodedAnchor);
+    if (target) {
+      target.scrollIntoView({ behavior: "instant", block: "start" });
+    }
+  }
+
+  var initialAnchor = document.body.dataset.initialAnchor;
+  if (initialAnchor) {
+    requestAnimationFrame(function () {
+      scrollToAnchor(initialAnchor);
+    });
   }
 
   function getIntersectingLineRange(range) {

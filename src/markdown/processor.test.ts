@@ -104,3 +104,18 @@ describe("processMarkdown superscript and subscript", () => {
     expect(result.html).toContain("<del>removed</del>");
   });
 });
+
+describe("processMarkdown heading anchors", () => {
+  it("adds GitHub-compatible IDs to headings", async () => {
+    const result = await processMarkdown(
+      "## E1 stock gsplat pinhole smoke + standard PLY baseline"
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.html).toContain(
+      '<h2 id="e1-stock-gsplat-pinhole-smoke--standard-ply-baseline"'
+    );
+  });
+});

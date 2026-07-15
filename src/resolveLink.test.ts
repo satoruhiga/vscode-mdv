@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as path from "path";
-import { resolveMarkdownLink } from "./resolveLink";
+import { getMarkdownLinkFragment, resolveMarkdownLink } from "./resolveLink";
 
 describe("resolveMarkdownLink", () => {
   const baseDir = "/workspace/docs";
@@ -53,5 +53,24 @@ describe("resolveMarkdownLink", () => {
   it("handles subdirectory wiki-link path", () => {
     const result = resolveMarkdownLink("sub/nested-page", baseDir);
     expect(result).toBe(path.resolve(baseDir, "sub/nested-page.md"));
+  });
+});
+
+describe("getMarkdownLinkFragment", () => {
+  it("returns a heading fragment", () => {
+    expect(getMarkdownLinkFragment("./log.md#e1-stock-gsplat")).toBe(
+      "e1-stock-gsplat"
+    );
+  });
+
+  it("decodes URL-encoded fragments", () => {
+    expect(getMarkdownLinkFragment("./log.md#日本語%E8%A6%8B%E5%87%BA%E3%81%97")).toBe(
+      "日本語見出し"
+    );
+  });
+
+  it("returns undefined when no fragment exists", () => {
+    expect(getMarkdownLinkFragment("./log.md")).toBeUndefined();
+    expect(getMarkdownLinkFragment("./log.md#")).toBeUndefined();
   });
 });
